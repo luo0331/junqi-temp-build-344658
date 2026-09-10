@@ -56,5 +56,5 @@ jobs:
         run: |
           for video in videos/*.mp4; do
             echo "===== $video ====="
-            ./start_signal_probe "$video" 5
+            ./start_signal_probe "$video" 1
           done
