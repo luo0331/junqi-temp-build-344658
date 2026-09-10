@@ -41,14 +41,12 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             build
 
-      - name: Package encrypted IPA
+      - name: Package unsigned IPA
         working-directory: private-src
-        env:
-          ARTIFACT_PASSWORD: ${{ secrets.ARTIFACT_PASSWORD }}
         run: |
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/JunqiAssistant.app Payload/
-          zip -P "$ARTIFACT_PASSWORD" -qr JunqiAssistant-unsigned.ipa Payload
+          zip -qr JunqiAssistant-unsigned.ipa Payload
 
       - uses: actions/upload-artifact@v4
         with:
