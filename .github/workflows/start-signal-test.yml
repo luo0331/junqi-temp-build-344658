@@ -25,18 +25,13 @@ jobs:
             JunqiAssistant/Resources/StartPhraseClassifier.mlmodel \
             model
 
-      - name: Compile runtime probe
+      - name: Compile start-signal probe
         working-directory: private-src
         run: |
           xcrun swiftc -O \
-            -o runtime_probe \
-            tools/runtime_probe.swift \
-            JunqiAssistant/Analysis/GameModels.swift \
-            JunqiAssistant/Analysis/BoardTracker.swift \
-            JunqiAssistant/Analysis/GameStateEngine.swift \
-            JunqiAssistant/Analysis/ScreenAnalyzer.swift \
+            -o start_signal_probe \
+            tools/start_signal_probe.swift \
             JunqiAssistant/Analysis/StartPhraseClassifierDetector.swift \
-            JunqiAssistant/Analysis/StartSignalDetector.swift \
             -framework Vision \
             -framework AVFoundation \
             -framework CoreVideo \
@@ -61,5 +56,5 @@ jobs:
         run: |
           for video in videos/*.mp4; do
             echo "===== $video ====="
-            ./runtime_probe video "$video" 5
+            ./start_signal_probe "$video" 5
           done
