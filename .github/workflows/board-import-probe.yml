@@ -1,0 +1,40 @@
+name: board-import-probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: luo0331/junqi-assistant-ios
+          ref: fix/start-sequence-v71
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-src
+
+      - name: Compile board import probe
+        working-directory: private-src
+        run: |
+          xcrun swiftc -O \
+            -o board_import_probe \
+            tools/board_import_probe.swift \
+            -framework AppKit \
+            -framework Vision \
+            -framework ImageIO
+
+      - name: Download board records
+        working-directory: private-src
+        run: |
+          mkdir -p board-records
+          gh release download board-records-20260911 \
+            --repo luo0331/junqi-assistant-ios \
+            --dir board-records
+
+      - name: Run board import probe
+        working-directory: private-src
+        run: ./board_import_probe board-records/*
