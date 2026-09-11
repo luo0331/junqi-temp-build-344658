@@ -18,7 +18,9 @@ jobs:
           path: private-src
 
       - name: Install Python dependencies
-        run: pip3 install opencv-python-headless
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install opencv-python-headless
 
       - name: Download source video
         working-directory: private-src
@@ -32,7 +34,7 @@ jobs:
       - name: Render annotated frames
         working-directory: private-src
         run: |
-          python3 tools/calibration_tracking_video.py \
+          ../.venv/bin/python tools/calibration_tracking_video.py \
             videos/4cfe64de4a8b54178995d439ada7ab0a.mp4 \
             tracking-frames
 
