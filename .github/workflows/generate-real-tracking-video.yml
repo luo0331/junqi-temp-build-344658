@@ -33,6 +33,7 @@ jobs:
             -o tracking_visualizer \
             tools/tracking_visualizer.swift \
             JunqiAssistant/Analysis/GameModels.swift \
+            JunqiAssistant/Analysis/BoardRecordValidator.swift \
             JunqiAssistant/Analysis/BoardTracker.swift \
             JunqiAssistant/Analysis/GameStateEngine.swift \
             JunqiAssistant/Analysis/ScreenAnalyzer.swift \
