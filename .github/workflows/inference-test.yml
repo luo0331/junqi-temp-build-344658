@@ -1,0 +1,31 @@
+name: inference-test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: luo0331/junqi-assistant-ios
+          ref: fix/start-sequence-v71
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-src
+
+      - name: Compile inference probe
+        working-directory: private-src
+        run: |
+          xcrun swiftc -O \
+            -o inference_probe \
+            tools/inference_probe.swift \
+            JunqiAssistant/Analysis/GameModels.swift \
+            JunqiAssistant/Analysis/InferenceEngine.swift
+
+      - name: Run inference probe
+        working-directory: private-src
+        run: ./inference_probe
