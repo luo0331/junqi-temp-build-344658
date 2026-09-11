@@ -1,0 +1,88 @@
+name: generate-real-tracking-video
+
+on:
+  workflow_dispatch:
+
+jobs:
+  video:
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: luo0331/junqi-assistant-ios
+          ref: fix/start-sequence-v71
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-src
+
+      - name: Compile Core ML model
+        working-directory: private-src
+        run: |
+          mkdir -p model
+          xcrun coremlcompiler compile \
+            JunqiAssistant/Resources/StartPhraseClassifier.mlmodel \
+            model
+
+      - name: Compile real tracking visualizer
+        working-directory: private-src
+        run: |
+          xcrun swiftc -O \
+            -parse-as-library \
+            -o tracking_visualizer \
+            tools/tracking_visualizer.swift \
+            JunqiAssistant/Analysis/GameModels.swift \
+            JunqiAssistant/Analysis/BoardTracker.swift \
+            JunqiAssistant/Analysis/GameStateEngine.swift \
+            JunqiAssistant/Analysis/ScreenAnalyzer.swift \
+            JunqiAssistant/Analysis/StartPhraseClassifierDetector.swift \
+            JunqiAssistant/Analysis/StartSignalDetector.swift \
+            -framework AppKit \
+            -framework Vision \
+            -framework AVFoundation \
+            -framework CoreVideo \
+            -framework CoreGraphics \
+            -framework CoreImage \
+            -framework CoreML \
+            -framework ImageIO
+
+      - name: Download game video
+        working-directory: private-src
+        run: |
+          mkdir -p videos
+          gh release download test-videos-v80-20260910 \
+            --repo luo0331/junqi-assistant-ios \
+            --pattern '4cfe64de4a8b54178995d439ada7ab0a.mp4' \
+            --dir videos
+
+      - name: Render real tracking frames
+        working-directory: private-src
+        env:
+          JUNQI_START_MODEL_PATH: ${{ github.workspace }}/private-src/model/StartPhraseClassifier.mlmodelc
+        run: |
+          ./tracking_visualizer \
+            videos/4cfe64de4a8b54178995d439ada7ab0a.mp4 \
+            tracking-real-frames \
+            5 \
+            25 \
+            10
+
+      - name: Install FFmpeg
+        run: brew install ffmpeg
+
+      - name: Encode real tracking video
+        working-directory: private-src
+        run: |
+          ffmpeg \
+            -y \
+            -framerate 5 \
+            -i tracking-real-frames/frame_%05d.png \
+            -c:v libx264 \
+            -pix_fmt yuv420p \
+            real-tracking-demo.mp4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: real-tracking-demo
+          path: private-src/real-tracking-demo.mp4
