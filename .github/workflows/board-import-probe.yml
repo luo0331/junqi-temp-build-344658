@@ -25,6 +25,7 @@ jobs:
             -o board_import_probe \
             tools/board_import_probe.swift \
             -framework AppKit \
+            -framework CoreImage \
             -framework Vision \
             -framework ImageIO
 
