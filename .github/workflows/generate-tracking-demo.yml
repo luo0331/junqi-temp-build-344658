@@ -46,7 +46,7 @@ jobs:
         run: |
           ffmpeg \
             -y \
-            -framerate 10 \
+            -framerate 15 \
             -i tracking-frames/frame_%05d.jpg \
             -c:v libx264 \
             -pix_fmt yuv420p \
