@@ -1,0 +1,75 @@
+name: runtime-full-test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 360
+    env:
+      GH_TOKEN: ${{ secrets.SOURCE_REPO_TOKEN }}
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: luo0331/junqi-assistant-ios
+          ref: fix/start-sequence-v71
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-src
+
+      - name: Compile Core ML model
+        working-directory: private-src
+        run: |
+          mkdir -p model
+          xcrun coremlcompiler compile \
+            JunqiAssistant/Resources/StartPhraseClassifier.mlmodel \
+            model
+
+      - name: Compile runtime probe
+        working-directory: private-src
+        run: |
+          xcrun swiftc -O \
+            -o runtime_probe \
+            tools/runtime_probe.swift \
+            JunqiAssistant/Analysis/GameModels.swift \
+            JunqiAssistant/Analysis/BoardTracker.swift \
+            JunqiAssistant/Analysis/GameStateEngine.swift \
+            JunqiAssistant/Analysis/ScreenAnalyzer.swift \
+            JunqiAssistant/Analysis/StartPhraseClassifierDetector.swift \
+            JunqiAssistant/Analysis/StartSignalDetector.swift \
+            -framework Vision \
+            -framework AVFoundation \
+            -framework CoreVideo \
+            -framework CoreGraphics \
+            -framework CoreImage \
+            -framework CoreML \
+            -framework ImageIO
+
+      - name: Download private test videos
+        working-directory: private-src
+        run: |
+          mkdir -p videos
+          gh release download test-videos-v80-20260910 \
+            --repo luo0331/junqi-assistant-ios \
+            --pattern '*.mp4' \
+            --dir videos
+
+      - name: Run full runtime probe
+        working-directory: private-src
+        env:
+          JUNQI_START_MODEL_PATH: ${{ github.workspace }}/private-src/model/StartPhraseClassifier.mlmodelc
+        run: |
+          set +e
+          report=runtime-report.txt
+          : > "$report"
+          for video in videos/*.mp4; do
+            echo "===== START $video =====" | tee -a "$report"
+            ./runtime_probe video "$video" 0.5 2>&1 | tee -a "$report"
+            echo "===== END $video =====" | tee -a "$report"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-full-report
+          path: private-src/runtime-report.txt
