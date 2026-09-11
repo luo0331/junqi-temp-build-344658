@@ -1,0 +1,47 @@
+name: generate-demo-video
+
+on:
+  workflow_dispatch:
+
+jobs:
+  video:
+    runs-on: macos-15
+    steps:
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: luo0331/junqi-assistant-ios
+          ref: fix/start-sequence-v71
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
+          path: private-src
+
+      - name: Compile demo renderer
+        working-directory: private-src
+        run: |
+          xcrun swiftc -O \
+            -o calibration_demo_video \
+            tools/calibration_demo_video.swift \
+            -framework AppKit
+
+      - name: Render frames
+        working-directory: private-src
+        run: ./calibration_demo_video frames
+
+      - name: Install FFmpeg
+        run: brew install ffmpeg
+
+      - name: Encode MP4
+        working-directory: private-src
+        run: |
+          ffmpeg \
+            -y \
+            -framerate 15 \
+            -i frames/frame_%04d.png \
+            -c:v libx264 \
+            -pix_fmt yuv420p \
+            calibration-process-demo.mp4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: calibration-process-demo
+          path: private-src/calibration-process-demo.mp4
