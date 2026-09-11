@@ -21,6 +21,7 @@ jobs:
         working-directory: private-src
         run: |
           xcrun swiftc -O \
+            -parse-as-library \
             -o board_import_probe \
             tools/board_import_probe.swift \
             -framework AppKit \
