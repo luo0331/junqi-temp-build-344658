@@ -65,7 +65,7 @@ jobs:
           : > "$report"
           for video in videos/*.mp4; do
             echo "===== START $video =====" | tee -a "$report"
-            ./runtime_probe video "$video" 2 0 180 2>&1 | tee -a "$report"
+            ./runtime_probe video "$video" 5 0 60 2>&1 | tee -a "$report"
             echo "===== END $video =====" | tee -a "$report"
           done
 
